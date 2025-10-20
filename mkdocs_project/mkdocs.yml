@@ -1,0 +1,46 @@
+site_name: Learning Hub
+site_description: >
+  Internal collection of articles and tutorials maintained via Gitea and MkDocs.
+site_url: https://example.org/
+repo_url: https://gitea.example.org/teaching/learning-hub
+repo_name: teaching/learning-hub
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.top
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: blue
+      accent: deep orange
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue grey
+      accent: amber
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+markdown_extensions:
+  - admonition
+  - attr_list
+  - codehilite
+  - footnotes
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.emoji
+  - pymdownx.superfences
+  - toc:
+      permalink: true
+nav:
+  - Главная: index.md
+  - Статьи:
+      - articles/example-article.md
+extra:
+  social:
+    - icon: fontawesome/brands/telegram
+      link: https://t.me/your-channel
+    - icon: fontawesome/solid/envelope
+      link: mailto:editor@example.org
