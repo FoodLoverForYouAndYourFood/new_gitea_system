@@ -1,69 +1,101 @@
-# Learning Hub: Gitea + MkDocs + Nginx
+# Learning Hub: полный гид по развёртыванию Gitea + MkDocs + Nginx
 
-Этот репозиторий показывает, как развернуть «открытый учебник», где редакторы пишут статьи в Markdown, пушат их в Gitea, а сайт автоматически пересобирается MkDocs и раздаётся Nginx.
+Этот проект показывает, как организовать «открытый учебник»: вы пишете статьи в Markdown, пушите их в Git-репозиторий, а сервер автоматически пересобирает и публикует сайт на домене с HTTPS. Ниже — пошаговая инструкция для человека, который раньше не разворачивал подобные штуки.
 
-## Почему сервер с 2 vCPU и 2 ГБ ОЗУ
+---
 
-- Сборка MkDocs нагружает Python, Jinja и обработку ассетов. Два виртуальных процессора позволяют выполнять пост-хук без подвисаний даже при регулярных пушах.
-- 2 ГБ оперативной памяти дают запас для Python-окружения, pip, MkDocs и Nginx одновременно. На меньших тарифах возникает своп и сборка заметно тормозит.
-- Конфигурация 2 vCPU / 2 ГБ уверенно обслуживает тысячи статических просмотров с включённым TLS и при этом остаётся доступной у большинства провайдеров VPS.
+## 1. Что входит в решение
 
-## Структура репозитория
+- **Gitea** (или GitHub) — хранит репозиторий. Пуш инициирует сборку.
+- **Git hook** — post-receive скрипт, который разворачивает изменения и запускает сборку.
+- **MkDocs** — генератор статического сайта из Markdown.
+- **Nginx** — отдаёт сгенерированные HTML-файлы во внешнюю сеть.
 
-- `mkdocs_project/` — конфигурация MkDocs, Markdown-файлы и ассеты.
-- `mkdocs_project/docs/articles/` — отдельные статьи (по одному `.md` на статью).
-- `mkdocs_project/docs/assets/images/` — общие изображения (замените заглушку 1x1 на реальные схемы).
-- `mkdocs_project/requirements.txt` — список Python-зависимостей.
-- `scripts/post-receive` — post-receive хук Gitea, который устанавливает зависимости и запускает `mkdocs build`.
-- `scripts/bootstrap.sh` — вспомогательный скрипт, ставящий пакеты, создающий каталоги и конфигурацию Nginx.
+Почему рекомендуем VPS с 2 vCPU и 2 ГБ RAM:
+- MkDocs при сборке нагружает CPU. Два виртуальных ядра сокращают время билда и исключают таймауты при серии пушей.
+- 2 ГБ памяти хватает MkDocs, Python-окружению, Nginx и служебным процессам без свопа.
+- Такой тариф доступен у большинства провайдеров и покрывает сотни статей и тысячи просмотров в день.
 
-## Предварительные требования
+---
 
-1. Сервер или VPS на Ubuntu 22.04+ с минимум 2 vCPU, 2 ГБ ОЗУ и 20 ГБ диска.
-2. Права root или sudo.
-3. DNS A/AAAA запись, указывающая на сервер.
-4. Настроенный экземпляр Gitea с SSH-доступом (может располагаться на том же сервере).
+## 2. Что подготовить заранее
 
-## Пошаговое развёртывание
+1. **VPS или выделенный сервер**  
+   Ubuntu 22.04 LTS, 20 ГБ диска, 2 vCPU, 2 ГБ RAM. Получите root-доступ (по SSH).
+2. **Домены и DNS**  
+   Зарегистрируйте домен (например, `learning-hub.example.org`). У регистратора настройте A-запись на IP VPS. Проверить можно командой:
+   ```bash
+   dig +short learning-hub.example.org
+   ```
+   Ответ должен совпадать с IP сервера.
+3. **Git-аккаунт**  
+   - Если используете Gitea: создайте организацию/пользователя и пустой bare-репозиторий `learning-hub.git`.
+   - Если предпочитаете GitHub: создайте приватный или публичный репозиторий и добавьте серверный SSH-ключ как deploy key (только на чтение).
+4. **Локальная машина**  
+   Любой компьютер с Git и возможностью подключаться к серверу по SSH. Лучше всего Linux/WSL2, но можно и macOS/Windows.
 
-### 1. Создать системного пользователя и каталоги
+---
 
+## 3. Быстрый тест локально (по желанию)
+
+Эти шаги помогут удостовериться, что MkDocs-сайт собирается до выхода на сервер.
+
+```bash
+git clone https://github.com/your-org/learning-hub.git
+cd learning-hub/mkdocs_project
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+mkdocs serve
+```
+
+Откройте http://127.0.0.1:8000 — увидите локальную версию сайта. Остановите сервер (Ctrl+C) и деактивируйте окружение `deactivate`.
+
+---
+
+## 4. Развёртывание на сервере (пошагово)
+
+Подключаемся к VPS:
+```bash
+ssh root@IP-АДРЕС
+```
+
+### Шаг 1. Создать системного пользователя и каталоги
 ```bash
 sudo useradd --system --create-home --shell /bin/bash mkdocs
 sudo install -d -o mkdocs -g mkdocs /srv/mkdocs /srv/www
 ```
 
-### 2. Установить базовые пакеты
-
+### Шаг 2. Установить пакеты
 ```bash
 sudo apt update
 sudo apt install -y git python3 python3-venv nginx
 ```
 
-Если Gitea будет работать на этой же машине, установите её сейчас (пакет, бинарник или контейнер).
-
-### 3. Клонировать рабочее дерево
-
+### Шаг 3. Клонировать рабочее дерево
+Вариант с Gitea (замените адрес на свой):
 ```bash
 sudo -u mkdocs git clone git@gitea.example.org:teaching/learning-hub.git /srv/mkdocs/learning-hub
 ```
 
-Если используете GitHub:
-
+Вариант с GitHub:
 ```bash
 sudo -u mkdocs git clone git@github.com:your-org/learning-hub.git /srv/mkdocs/learning-hub
 ```
 
-### 4. Подготовить Python-окружение
+Если команда запросила подтверждение ключа, введите `yes`.
 
+### Шаг 4. Настроить Python-окружение
 ```bash
 sudo -u mkdocs python3 -m venv /srv/mkdocs/.venv
 sudo -u mkdocs /srv/mkdocs/.venv/bin/pip install --upgrade pip
 sudo -u mkdocs /srv/mkdocs/.venv/bin/pip install -r /srv/mkdocs/learning-hub/requirements.txt
 ```
 
-### 5. Установить post-receive хук Gitea
-
+### Шаг 5. Установить post-receive хук
+```bash
+cd /srv/mkdocs/learning-hub
+```
 ```bash
 sudo install -o git -g git -m 750 scripts/post-receive \
   /var/lib/gitea/repos/teaching/learning-hub.git/hooks/post-receive
@@ -77,24 +109,27 @@ sudo chmod 640 /var/lib/gitea/repos/teaching/learning-hub.git/hooks/post-receive
 sudo chown git:git /var/lib/gitea/repos/teaching/learning-hub.git/hooks/post-receive.d/env
 ```
 
-### 6. Выполнить первую сборку вручную
+Если используете GitHub вместо Gitea, настройте отдельный deploy-скрипт (systemd timer или CI/CD) — принцип тот же: сделать `git pull`, `pip install -r ...`, `mkdocs build`.
 
+### Шаг 6. Прогнать первую сборку вручную
 ```bash
 sudo -u mkdocs /srv/mkdocs/.venv/bin/mkdocs build \
   --config-file /srv/mkdocs/learning-hub/mkdocs.yml \
   --site-dir /srv/www/learning-hub
 ```
 
-### 7. Настроить Nginx
+Проверьте, что появились HTML-файлы:
+```bash
+sudo ls /srv/www/learning-hub
+```
 
-Запустите скрипт:
-
+### Шаг 7. Настроить Nginx
+Автоматический способ:
 ```bash
 sudo ./scripts/bootstrap.sh git mkdocs learning-hub.example.org
 ```
 
-или создайте конфиг вручную:
-
+Ручной способ:
 ```bash
 sudo tee /etc/nginx/sites-available/learning-hub <<'EOF'
 server {
@@ -117,55 +152,129 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-### 8. Подключить HTTPS
+Проверка:
+```bash
+curl http://learning-hub.example.org
+```
+В ответе должен быть HTML-код главной страницы.
 
+### Шаг 8. Выпустить HTTPS-сертификат
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d learning-hub.example.org
 ```
+Отвечайте на вопросы мастера, выберите вариант автоматического редиректа на HTTPS.
 
-Certbot выпустит сертификат Let’s Encrypt и автоматически активирует TLS в конфигурации Nginx.
-
-## Процесс работы редакторов
-
-1. Клонировать репозиторий: `git clone git@github.com:your-org/learning-hub.git`.
-2. Создать ветку и добавить статьи в `mkdocs_project/docs/articles/`.
-3. Положить изображения в `mkdocs_project/docs/assets/images/` и ссылаться на них относительными путями.
-4. Обновить навигацию в `mkdocs.yml`, чтобы статья появилась в меню.
-5. Закоммитить и запушить изменения. Post-receive хук пересоберёт сайт и Nginx мгновенно отдаст обновлённый контент.
-
-## Локальный предпросмотр
-
+Проверка:
 ```bash
-cd mkdocs_project
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-mkdocs serve
+curl -I https://learning-hub.example.org
 ```
+Статус должен быть `200` или `301`, сертификат — валидный.
 
-Живой предпросмотр будет доступен на http://127.0.0.1:8000/ с автообновлением при изменении файлов.
+### Шаг 9. Проверить Git-хук
 
-## Публикация репозитория на GitHub
+1. На локальной машине измените любую статью или добавьте новую.
+2. Выполните `git add`, `git commit`, `git push`.
+3. На сервере смотрите лог:
+   ```bash
+   sudo tail -f /var/lib/gitea/log/gitea.log
+   ```
+   Должны появиться сообщения вида `[hook] Updating working tree...`.
+4. Обновите страницу сайта — изменения должны стать видны.
 
-Если вы начали на локальной машине:
+---
 
-```bash
-git init
-git add .
-git commit -m "Initial Learning Hub setup"
-git branch -M main
-git remote add origin git@github.com:your-org/learning-hub.git
-git push -u origin main
-```
+## 5. Публикация и индексация в поиске
 
-Предоставьте продовому серверу доступ по SSH (deploy key или отдельный пользователь), чтобы он мог клонировать из GitHub и получать обновления.
+1. **Разрешить индексирование**  
+   Убедитесь, что в корне сайта есть `robots.txt` с разрешением:
+   ```
+   User-agent: *
+   Allow: /
+   Sitemap: https://learning-hub.example.org/sitemap.xml
+   ```
+   MkDocs Material генерирует карту сайта автоматически.
 
-## Плановое обслуживание
+2. **Google Search Console**  
+   - Зайдите на https://search.google.com/search-console.  
+   - Добавьте ресурс (тип — домен или URL prefix).  
+   - Подтвердите владение (по DNS-записи или через загруженный HTML-файл).  
+   - Отправьте карту сайта (`https://learning-hub.example.org/sitemap.xml`).  
+   Индексация может занять от нескольких часов до пары недель.
 
-- Раз в месяц ставьте обновления: `sudo apt update && sudo apt upgrade`.
-- Проверяйте автоматическое продление сертификата: `sudo certbot renew --dry-run`.
-- Следите за заполнением диска в `/srv/www` (примерно 60 МБ на 1000 статей с картинками).
-- Периодически обновляйте зависимости MkDocs: `pip install -U -r requirements.txt` (предварительно протестируйте локально).
+3. **Yandex Webmaster (необязательно)**  
+   Аналогично добавьте сайт в https://webmaster.yandex.ru для русскоязычной аудитории.
 
-По этой инструкции можно быстро подготовить VPS, развернуть пайплайн и публиковать новый учебный контент простым пушем Markdown-файлов в Gitea или GitHub.
+4. **Проверка наличия в поиске**  
+   Через некоторое время попробуйте `site:learning-hub.example.org` в Google. Если результатов нет — проверьте Search Console на наличие ошибок.
+
+---
+
+## 6. Работа редакторов
+
+1. Клонировать репозиторий:
+   ```bash
+   git clone git@github.com:your-org/learning-hub.git
+   ```
+2. Создать ветку:
+   ```bash
+   git checkout -b feature/new-article
+   ```
+3. Добавить Markdown-файл в `mkdocs_project/docs/articles/`, изображения — в `mkdocs_project/docs/assets/images/`.
+4. Обновить `mkdocs_project/mkdocs.yml` (секция `nav`), чтобы статья появилась в меню.
+5. Проверить локально `mkdocs serve`.
+6. Сделать `git commit`, `git push` и отправить Pull Request (если используете GitHub/Gitea workflow).
+7. После мерджа хук автоматически пересоберёт сайт.
+
+---
+
+## 7. Чек-лист проверки после развёртывания
+
+- [ ] Домен указывает на IP сервера (`dig` возвращает правильный адрес).
+- [ ] `curl http://домен` и `curl https://домен` возвращают содержимое сайта.
+- [ ] Команда `sudo systemctl status nginx` показывает статус `active (running)`.
+- [ ] Файл `/srv/www/learning-hub/index.html` обновляется после пуша.
+- [ ] В Search Console загружена карта сайта, ошибок нет.
+- [ ] Сертификат Let’s Encrypt настроен, cron-задание `certbot` добавлено (`systemctl list-timers | grep certbot`).
+
+---
+
+## 8. Регулярное обслуживание
+
+- Раз в месяц обновляйте систему:
+  ```bash
+  sudo apt update && sudo apt upgrade
+  ```
+- Проверяйте автоматическое продление сертификата:
+  ```bash
+  sudo certbot renew --dry-run
+  ```
+- Следите за свободным местом:
+  ```bash
+  df -h /srv/www
+  ```
+- Периодически обновляйте зависимости MkDocs (предварительно тестируйте локально):
+  ```bash
+  pip install -U -r mkdocs_project/requirements.txt
+  ```
+- Делайте резервные копии `/srv/mkdocs/learning-hub` и `/srv/www/learning-hub` (rsync, borg, snapshot провайдера).
+
+---
+
+## 9. Частые вопросы
+
+**Можно ли вести репозиторий только на GitHub?**  
+Да. Тогда пост-хук Gitea не нужен. Используйте GitHub Actions, GitLab CI или cron-скрипт на сервере, который делает `git pull` и `mkdocs build`.
+
+**Нужно ли держать сервер включенным 24/7?**  
+Да, иначе сайт перестанет открываться. Для статического сайта достаточно бюджетного VPS.
+
+**Когда сайт появится в Google?**  
+После добавления в Search Console и индексации. Обычно первые страницы появляются в течение 1–7 дней, но может занять дольше.
+
+**Можно ли обойтись без Nginx?**  
+Теоретически да (например, через GitHub Pages), но в этой схеме Nginx даёт контроль над доменом, HTTPS и логами.
+
+---
+
+Теперь у вас есть полный чек-лист: от подготовки VPS и домена до попадания в индекс Google. Следуя шагам сверху вниз, вы развернёте учебник и сможете быстро добавлять новые статьи, просто пуша Markdown-файлы в репозиторий.
