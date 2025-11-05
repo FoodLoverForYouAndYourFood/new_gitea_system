@@ -52,6 +52,7 @@ nav:
       - Интеграции: 03-pro/integrations.md
   - Хронология: 99-changelog.md
   - Компоненты: extra/components-showcase.md
+  - Автодеплой: extra/publishing-guide.md
 
 plugins:
   - search:
