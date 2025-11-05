@@ -85,4 +85,6 @@ extra_javascript:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/your-username
+      link: https://github.com/FoodLoverForYouAndYourFood
+    - icon: fontawesome/brands/telegram
+      link: https://t.me/analyst_exe

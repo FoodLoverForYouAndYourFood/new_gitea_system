@@ -2,6 +2,9 @@
 .venv/
 venv/
 **/.venv/
+id_ruvds
+id_ruvds.pub
+*.ppk
 
 # MkDocs build output
 site/
