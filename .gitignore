@@ -1,9 +1,11 @@
 # Python virtual environments
 .venv/
 venv/
+**/.venv/
 
 # MkDocs build output
 site/
+**/site/
 
 # Editor & OS
 .DS_Store

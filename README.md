@@ -1,38 +1,74 @@
-# SA Knowledge Hub — skeleton (S2, Dark Violet)
+# Learning Hub / SA Knowledge Hub
 
-Минимальный каркас для библиотеки знаний системного аналитика на MkDocs Material.
+Репозиторий объединяет два ключевых блока:
 
-## Быстрый старт
+1. **`mkdocs_project/`** — полностью локализованный сайт на Material for MkDocs в темной фиолетовой теме (SA Knowledge Hub).  
+2. **`scripts/`** — набор shell-скриптов для автоматизации деплоя на сервере с Gitea и Nginx.
 
-1. Установите зависимости  
+Таким образом, можно вести документацию в Markdown, пушить изменения в Git, а сервер будет пересобирать и публиковать сайт.
+
+---
+
+## Быстрый старт локально
+
+```bash
+cd mkdocs_project
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+mkdocs serve                     # превью по http://127.0.0.1:8000/
+```
+
+Сборка статики:
+
+```bash
+mkdocs build --clean
+```
+
+---
+
+## Структура репозитория
+
+- `mkdocs_project/mkdocs.yml` — конфигурация темы, навигации, плагинов и instant view.  
+- `mkdocs_project/docs/` — контент библиотеки (Beginner / Middle / Pro, глоссарий, компоненты).  
+- `mkdocs_project/overrides/assets/` — кастомные стили и логика прогресса (localStorage + кнопки «Отметить прочитанным»).  
+- `mkdocs_project/requirements.txt` — зависимости (MkDocs 1.6.1, Material 9.0.0, плагины).  
+- `scripts/bootstrap.sh` — установщик окружения на сервере (Python, MkDocs, Nginx).  
+- `scripts/post-receive` — Git hook, который после пуша пересобирает сайт и выкладывает в `site/`.
+
+---
+
+## Сборка и деплой на сервере
+
+1. **Подготовьте VPS**  
+   Ubuntu 22.04 LTS, 1–2 vCPU, 1–2 ГБ RAM, 20 ГБ SSD достаточно для MkDocs и Nginx.
+
+2. **Заведите отдельного пользователя** (пример в `scripts/bootstrap.sh`):
    ```bash
-   pip install -r requirements.txt
+   sudo useradd --system --create-home --shell /bin/bash mkdocs
    ```
-2. Запустите локальный сервер  
+
+3. **Клонируйте репозиторий и установите зависимости**:
    ```bash
-   mkdocs serve
-   ```
-3. Сборка статики  
-   ```bash
-   mkdocs build --clean
-   ```
-4. Деплой на GitHub Pages  
-   ```bash
-   mkdocs gh-deploy
+   sudo -u mkdocs git clone <ваш-репозиторий> /srv/mkdocs/new_gitea_system
+   sudo -u mkdocs python3 -m venv /srv/mkdocs/.venv
+   sudo -u mkdocs /srv/mkdocs/.venv/bin/pip install -r /srv/mkdocs/new_gitea_system/mkdocs_project/requirements.txt
    ```
 
-## Структура
+4. **Настройте Git hook `scripts/post-receive`** — он будет запускать `mkdocs build --clean` и перекладывать папку `site/` в каталог, который отдаёт Nginx.
 
-- `mkdocs.yml` — конфигурация темы, навигации и плагинов.  
-- `docs/` — Markdown-страницы (Beginner / Middle / Pro, глоссарий, компоненты).  
-- `overrides/assets/styles.css` — тёмная фиолетовая тема.  
-- `overrides/assets/progress.js` — клиентская заготовка для учёта прогресса/XP.
+5. **Сконфигурируйте Nginx**  
+   Отдавайте статический контент из `/srv/mkdocs/site` (или того пути, который указали в hook).
 
-## Особенности
+> Подробная инструкция по автоматическому развёртыванию, настройке Gitea и Nginx — в исходной версии README (`git show origin/main:README.md`).
 
-- Instant view и мгновенная навигация.  
-- Кастомная тёмная палитра с фиолетовыми акцентами.  
-- Минификация статики и поддержка локализованных дат.  
-- Прогресс хранится в `localStorage`: ключи `sa_read_articles` и `sa_xp`.
+---
 
-> Контент в `docs/` полностью на русском, но конфигурация поддерживает расширение до многоязычности.
+## Что нового в SA Knowledge Hub
+
+- Полностью переписанный контент на русском: Beginner/Middle/Pro, глоссарий, компоненты, changelog.  
+- Instant View, вкладки, подсветка кода, кнопки копирования, прогресс-бар.  
+- Очищенные requirements (MkDocs 1.6.1) и отключаемый PDF-экспорт (WeasyPrint можно подключить позднее).  
+- Тёмная фиолетовая тема (overrides/assets/styles.css) и client-side трекинг прогресса (overrides/assets/progress.js).
+
+Используйте репозиторий как базу: расширяйте MkDocs-навигацию, дорабатывайте скрипты деплоя, подключайте CI или GitHub Actions.

@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="${HOOK_DIR}/post-receive.d/env"
+
+if [[ -f "${ENV_FILE}" ]]; then
+  # shellcheck source=/dev/null
+  source "${ENV_FILE}"
+fi
+
+# post-receive hook for Gitea bare repository
+# Configurable environment variables:
+#   WORK_TREE: path to the working tree checkout (e.g. /srv/mkdocs/learning-hub)
+#   VENV_PATH: path to Python virtual environment with MkDocs installed
+#   SITE_OUTPUT: directory served by Nginx (e.g. /srv/www/learning-hub)
+
+readonly WORK_TREE="${WORK_TREE:-/srv/mkdocs/learning-hub}"
+readonly VENV_PATH="${VENV_PATH:-/srv/mkdocs/.venv}"
+readonly SITE_OUTPUT="${SITE_OUTPUT:-/srv/www/learning-hub}"
+
+echo "[hook] Updating working tree at ${WORK_TREE}"
+git --work-tree="${WORK_TREE}" checkout -f
+
+echo "[hook] Installing dependencies"
+source "${VENV_PATH}/bin/activate"
+pip install -q -r "${WORK_TREE}/requirements.txt"
+
+echo "[hook] Building MkDocs"
+mkdocs build --config-file "${WORK_TREE}/mkdocs.yml" --site-dir "${SITE_OUTPUT}"
+
+echo "[hook] Build complete. Site updated at ${SITE_OUTPUT}"
