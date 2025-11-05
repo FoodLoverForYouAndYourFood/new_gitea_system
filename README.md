@@ -32,6 +32,7 @@ mkdocs build --clean
 - `mkdocs_project/mkdocs.yml` — тема, навигация, плагины, instant view.
 - `mkdocs_project/docs/` — контент (Beginner / Middle / Pro, глоссарий, компоненты, инструкции).
 - `mkdocs_project/overrides/assets/` — кастомные стили и прогресс-бар (localStorage).
+- `mkdocs_project/overrides/partials/head.html` — мета-теги для Instant View в Telegram.
 - `mkdocs_project/requirements.txt` — зависимости (MkDocs 1.6.1, Material 9.0.0 и плагины).
 - `scripts/bootstrap.sh` — установка Python/MkDocs/Nginx на сервере.
 - `scripts/post-receive` — пример Git hook (если нужен собственный bare-репозиторий).
@@ -123,6 +124,8 @@ sudo journalctl -u mkdocs-autodeploy.service -u mkdocs-autodeploy.timer -n 100
 3. Через ~60 секунд сайт автоматически обновлён (деплой выполняет systemd-таймер).
 
 Принудительный запуск: `systemctl start mkdocs-autodeploy.service`.
+
+За настройкой Instant View переходите к странице `mkdocs_project/docs/extra/instant-view.md`.
 
 ---
 

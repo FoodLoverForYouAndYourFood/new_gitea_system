@@ -1,0 +1,8 @@
+{% if config.extra.telegram %}
+  {% if config.extra.telegram.channel %}
+  <meta property="telegram:channel" content="{{ config.extra.telegram.channel }}">
+  {% endif %}
+  {% if config.extra.telegram.sample_article %}
+  <meta property="telegram:instant_view" content="{{ config.extra.telegram.sample_article }}">
+  {% endif %}
+{% endif %}

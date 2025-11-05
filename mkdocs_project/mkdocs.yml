@@ -53,6 +53,7 @@ nav:
   - Хронология: 99-changelog.md
   - Компоненты: extra/components-showcase.md
   - Автодеплой: extra/publishing-guide.md
+  - Instant View для Telegram: extra/instant-view.md
 
 plugins:
   - search:
@@ -89,3 +90,6 @@ extra:
       link: https://github.com/FoodLoverForYouAndYourFood
     - icon: fontawesome/brands/telegram
       link: https://t.me/analyst_exe
+  telegram:
+    channel: "@analyst_exe"
+    sample_article: "https://45.141.102.227/mkdocs-sa-library/"
