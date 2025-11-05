@@ -1,0 +1,88 @@
+site_name: "SA Knowledge Hub"
+site_description: "База знаний для системных аналитиков в тёмной фиолетовой теме"
+site_url: "https://your-username.github.io/mkdocs-sa-library"  # replace with your pages url
+repo_url: ""
+repo_name: ""
+edit_uri: ""
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/weather-sunny
+        name: Светлая тема
+    - scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/weather-night
+        name: Тёмная тема
+  font:
+    text: Inter
+    code: "JetBrains Mono"
+  features:
+    - navigation.instant
+    - navigation.instant.preview
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+
+nav:
+  - Главная: index.md
+  - О проекте: about.md
+  - Глоссарий: 00-glossary/glossary.md
+  - Новичок:
+      - Введение: 01-basics/intro.md
+      - Инструменты: 01-basics/tools.md
+      - С чего начать: 01-basics/how-to-start.md
+  - Специалист:
+      - BRD/MRD: 02-middle/brd-mrd.md
+      - User Stories: 02-middle/user-stories.md
+      - BPMN и UML: 02-middle/bpmn-uml.md
+  - Эксперт:
+      - Системный дизайн: 03-pro/system-design.md
+      - DDD: 03-pro/ddd.md
+      - Интеграции: 03-pro/integrations.md
+  - Хронология: 99-changelog.md
+  - Компоненты: extra/components-showcase.md
+
+plugins:
+  - search:
+      lang: ru
+      separator: '[\s\-]+'
+  - git-revision-date-localized:
+      fallback_to_build_date: true
+  - minify:
+  # - with-pdf:
+  #     media_type: print
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - pymdownx.superfences
+  - pymdownx.snippets
+  - pymdownx.progressbar
+  - pymdownx.tabbed
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - toc:
+      permalink: true
+
+extra_css:
+  - overrides/assets/styles.css
+
+extra_javascript:
+  - overrides/assets/progress.js
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/your-username

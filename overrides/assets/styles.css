@@ -1,0 +1,41 @@
+/* Dark Violet theme overrides */
+:root {
+  --md-default-fg: #e6e7eb;
+  --md-default-bg: #0d0e11;
+  --md-primary-fg: #7B61FF;
+  --md-accent-fg: #A78BFA;
+  --md-code-bg: #0b0b0e;
+}
+
+/* Body background & text */
+.md-content {
+  background: linear-gradient(180deg, #0d0e11 0%, #0b0b0f 100%);
+  color: var(--md-default-fg);
+}
+
+/* Card accents */
+.md-card {
+  background: #0f1013;
+  border: 1px solid rgba(123,97,255,0.08);
+}
+
+/* Links */
+a, .md-nav__link {
+  color: var(--md-primary-fg);
+}
+
+/* Progress button */
+.sa-mark-read {
+  background: linear-gradient(90deg,#7B61FF,#A78BFA);
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(123,97,255,0.12);
+}
+
+/* small tweaks */
+.md-footer {
+  border-top: 1px solid rgba(255,255,255,0.03);
+}

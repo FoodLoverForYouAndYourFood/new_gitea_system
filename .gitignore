@@ -1,0 +1,11 @@
+# Python virtual environments
+.venv/
+venv/
+
+# MkDocs build output
+site/
+
+# Editor & OS
+.DS_Store
+Thumbs.db
+*.log

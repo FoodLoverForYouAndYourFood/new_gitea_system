@@ -1,0 +1,6 @@
+mkdocs==1.6.1
+mkdocs-material==9.0.0
+pymdown-extensions
+mkdocs-with-pdf
+mkdocs-minify-plugin
+mkdocs-git-revision-date-localized-plugin
