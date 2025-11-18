@@ -7,6 +7,7 @@
 */
 
 (function(){
+  var eventsBound = false;
   var READ_KEY = 'sa_read_articles';
   var XP_KEY = 'sa_xp';
   var SCROLL_KEY_PREFIX = 'sa_scroll_';
@@ -76,10 +77,19 @@
     }
   }
 
+  function cleanup() {
+    var w = document.getElementById('sa-widget');
+    if (w && w.parentNode) w.parentNode.removeChild(w);
+    document.querySelectorAll('.sa-checklist').forEach(function(el){
+      el.remove();
+    });
+  }
+
   function buildWidget() {
     if (document.getElementById('sa-widget')) return;
     // choose placement: right TOC sidebar -> left nav -> content top
-    var mount = document.querySelector('.md-sidebar--secondary') ||
+    var mount = document.querySelector('.md-sidebar__inner') ||
+                document.querySelector('.md-sidebar--secondary') ||
                 document.querySelector('.md-sidebar') ||
                 document.querySelector('.md-content__inner');
     var wrapper = document.createElement('div');
@@ -138,22 +148,28 @@
   }
 
   function init() {
+    cleanup();
     buildWidget();
     buildChecklist();
     updateGlobalProgress();
     updatePageProgress(window.location.pathname);
-    document.addEventListener('scroll', handleScroll, { passive: true });
+    if (!eventsBound) {
+      eventsBound = true;
+      document.addEventListener('scroll', handleScroll, { passive: true });
+      document.addEventListener('click', function(e){
+        var t = e.target;
+        if (t.classList && t.classList.contains('sa-mark-read')) {
+          var id = t.getAttribute('data-article') || window.location.pathname;
+          markRead(id);
+        }
+      });
+    }
   }
 
-  document.addEventListener('click', function(e){
-    var t = e.target;
-    if (t.classList && t.classList.contains('sa-mark-read')) {
-      var id = t.getAttribute('data-article') || window.location.pathname;
-      markRead(id);
-    }
-  });
-
   document.addEventListener('DOMContentLoaded', init);
+  if (window.document$ && window.document$.subscribe) {
+    window.document$.subscribe(init); // MkDocs Material instant navigation
+  }
 
   // expose for debugging
   window.__sa = {
