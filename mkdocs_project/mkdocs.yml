@@ -1,5 +1,5 @@
 site_name: "SA Knowledge Hub"
-site_description: "База знаний для системных аналитиков в тёмной фиолетовой теме"
+site_description: "Библиотека для аналитиков: гайды по требованиям, моделям, архитектуре и интеграциям."
 site_url: "https://analystexe.ru"
 repo_url: ""
 repo_name: ""
@@ -39,21 +39,19 @@ nav:
   - О проекте: about.md
   - Глоссарий: 00-glossary/glossary.md
   - Новичок:
-      - Введение: 01-basics/intro.md
+      - Роль аналитика: 01-basics/intro.md
       - Инструменты: 01-basics/tools.md
-      - С чего начать: 01-basics/how-to-start.md
+      - Как стартовать задачу: 01-basics/how-to-start.md
   - Специалист:
       - BRD/MRD: 02-middle/brd-mrd.md
       - User Stories: 02-middle/user-stories.md
       - BPMN и UML: 02-middle/bpmn-uml.md
   - Эксперт:
-      - Системный дизайн: 03-pro/system-design.md
-      - DDD: 03-pro/ddd.md
-      - Интеграции: 03-pro/integrations.md
+      - Системный дизайн и C4: 03-pro/system-design.md
+      - Прикладной DDD: 03-pro/ddd.md
+      - Интеграции и надёжность: 03-pro/integrations.md
   - Хронология: 99-changelog.md
   - Компоненты: extra/components-showcase.md
-  - Автодеплой: extra/publishing-guide.md
-  - Instant View для Telegram: extra/instant-view.md
 
 plugins:
   - search:
@@ -90,6 +88,3 @@ extra:
       link: https://github.com/FoodLoverForYouAndYourFood
     - icon: fontawesome/brands/telegram
       link: https://t.me/analyst_exe
-  telegram:
-    channel: "@analyst_exe"
-    sample_article: "https://45.141.102.227/mkdocs-sa-library/"
