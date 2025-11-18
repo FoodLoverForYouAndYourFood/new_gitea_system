@@ -78,6 +78,10 @@
 
   function buildWidget() {
     if (document.getElementById('sa-widget')) return;
+    // choose placement: right TOC sidebar -> left nav -> content top
+    var mount = document.querySelector('.md-sidebar--secondary') ||
+                document.querySelector('.md-sidebar') ||
+                document.querySelector('.md-content__inner');
     var wrapper = document.createElement('div');
     wrapper.id = 'sa-widget';
     wrapper.innerHTML = [
@@ -94,9 +98,12 @@
       '<button class="sa-mark-read" data-article="" type="button">Отметить как пройдено</button>'
     ].join('');
 
-    // Try to attach near nav
-    var target = document.querySelector('.md-sidebar') || document.body;
-    target.appendChild(wrapper);
+    if (mount) {
+      // put on top for visibility
+      mount.insertBefore(wrapper, mount.firstChild || null);
+    } else {
+      document.body.appendChild(wrapper);
+    }
   }
 
   function buildChecklist() {
