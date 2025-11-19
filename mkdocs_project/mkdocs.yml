@@ -77,10 +77,10 @@ markdown_extensions:
       permalink: true
 
 extra_css:
-  - assets/styles.css
+  - overrides/assets/styles.css
 
 extra_javascript:
-  - assets/progress.js
+  - overrides/assets/progress.js
 
 extra:
   social:
