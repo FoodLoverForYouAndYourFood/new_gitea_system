@@ -12,11 +12,6 @@
   var XP_KEY = 'sa_xp';
   var SCROLL_KEY_PREFIX = 'sa_scroll_';
   var CHECKLIST_PREFIX = 'sa_checklist_';
-  var LEVELS = [
-    { name: 'Новичок', prefix: '/01-basics/' },
-    { name: 'Специалист', prefix: '/02-middle/' },
-    { name: 'Эксперт', prefix: '/03-pro/' }
-  ];
 
   function safeJSONGet(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key) || fallback); }
@@ -36,32 +31,6 @@
     localStorage.setItem(SCROLL_KEY_PREFIX + id, String(v));
   }
 
-  function normalizePath(href) {
-    // keep only path part, drop hashes/query, ensure trailing slash style
-    var a = document.createElement('a');
-    a.href = href;
-    var path = a.pathname || '';
-    path = path.replace(/index\.html?$/,'');
-    if (!path.endsWith('/')) path = path;
-    return path || '/';
-  }
-
-  function collectPages() {
-    var links = Array.from(document.querySelectorAll('.md-nav__link'));
-    var paths = [];
-    links.forEach(function(l){
-      var href = l.getAttribute('href');
-      if (!href || href.startsWith('http') || href.startsWith('#')) return;
-      var p = normalizePath(href);
-      if (!paths.includes(p)) paths.push(p);
-    });
-    if (!paths.length) {
-      // fallback to current page only
-      paths = [normalizePath(window.location.pathname)];
-    }
-    return paths;
-  }
-
   function markRead(articleId) {
     var read = getRead();
     if (!read.includes(articleId)) {
@@ -72,28 +41,17 @@
     updateUI();
   }
 
-  function updateGlobalProgress(pages) {
+  function updateGlobalProgress() {
     var read = getRead();
-    var total = pages.length || 1;
-    var readCount = read.filter(function(r){ return pages.includes(r); }).length;
-    var value = Math.min(100, Math.round((readCount / total) * 100));
+    var navLinks = Array.from(document.querySelectorAll('.md-nav__link'));
+    var total = navLinks.length || 1;
+    var value = Math.min(100, Math.round((read.length / total) * 100));
     var bar = document.getElementById('sa-progress-bar');
     var label = document.getElementById('sa-progress-value');
     var xpLabel = document.getElementById('sa-xp-value');
     if (bar) bar.style.width = value + '%';
-    if (label) label.textContent = value + '% · ' + readCount + '/' + total;
+    if (label) label.textContent = value + '% · ' + read.length + '/' + total;
     if (xpLabel) xpLabel.textContent = getXP() + ' XP';
-
-    var levelsEl = document.getElementById('sa-levels');
-    if (levelsEl) {
-      levelsEl.innerHTML = LEVELS.map(function(lvl){
-        var lvlPages = pages.filter(function(p){ return p.startsWith(lvl.prefix); });
-        var lvlTotal = lvlPages.length || 1;
-        var lvlRead = read.filter(function(r){ return lvlPages.includes(r); }).length;
-        var perc = Math.min(100, Math.round((lvlRead / lvlTotal) * 100));
-        return '<div class="sa-level-row"><span>'+lvl.name+'</span><span>'+perc+'% ('+lvlRead+'/'+lvlTotal+')</span></div>';
-      }).join('');
-    }
   }
 
   function updatePageProgress(articleId) {
@@ -144,7 +102,6 @@
       '<div class="sa-meta">Глобально</div>',
       '<div class="sa-bar"><div id="sa-progress-bar"></div></div>',
       '<div id="sa-progress-value" class="sa-small"></div>',
-      '<div id="sa-levels" class="sa-levels"></div>',
       '<div class="sa-meta sa-top-gap">Страница</div>',
       '<div class="sa-bar small"><div id="sa-page-scroll"></div></div>',
       '<div id="sa-page-scroll-value" class="sa-small"></div>',
@@ -194,8 +151,7 @@
     cleanup();
     buildWidget();
     buildChecklist();
-    var pages = collectPages();
-    updateGlobalProgress(pages);
+    updateGlobalProgress();
     updatePageProgress(window.location.pathname);
     if (!eventsBound) {
       eventsBound = true;
